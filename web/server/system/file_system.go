@@ -43,21 +43,22 @@ func (self *FileSystem) Exists(directory string) bool {
 }
 
 func (self *FileSystem) ReadGo(path string) (source, covered string, err error) {
-	original, err = ioutil.ReadFile(path)
+	rawSource, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", "", err
 	}
+	source = string(rawSource)
 
 	if !self.coverage {
-		coverage = original
+		covered = source
 		return
 	}
 
 	command := exec.Command(self.gobin, "tool", "cover", "-mode:set", "-var=GoConvey", path)
-	rawOutput, err = command.CombinedOutput()
+	rawOutput, err := command.CombinedOutput()
 	covered = string(rawOutput)
 	if err != nil {
-		original = ""
+		source = ""
 		covered = ""
 	}
 	return
