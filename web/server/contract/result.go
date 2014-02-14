@@ -20,7 +20,7 @@ func NewPackage(path string) *Package {
 	self := new(Package)
 	self.Active = true
 	self.Path = path
-	self.Name = resolvePackageName(path)
+	self.Name = ResolvePackageName(path)
 	self.Result = NewPackageResult(self.Name)
 	return self
 }
@@ -80,7 +80,7 @@ func NewTestResult(testName string) *TestResult {
 	return self
 }
 
-func resolvePackageName(path string) string {
+func ResolvePackageName(path string) string {
 	index := strings.Index(path, endGoPath)
 	if index < 0 {
 		return path

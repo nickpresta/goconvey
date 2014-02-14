@@ -4,15 +4,19 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-type FileSystem struct{}
+type FileSystem struct {
+	gobin    string
+	coverage bool
+}
 
 func (self *FileSystem) Walk(root string, step filepath.WalkFunc) {
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if self.isMetaDirectory(info) {
+		if isMetaDirectory(info) {
 			return filepath.SkipDir
 		}
 
@@ -24,8 +28,7 @@ func (self *FileSystem) Walk(root string, step filepath.WalkFunc) {
 		panic(err)
 	}
 }
-
-func (self *FileSystem) isMetaDirectory(info os.FileInfo) bool {
+func isMetaDirectory(info os.FileInfo) bool {
 	name := info.Name()
 	return info.IsDir() && (strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") || name == "testdata")
 }
@@ -39,6 +42,30 @@ func (self *FileSystem) Exists(directory string) bool {
 	return err == nil && info.IsDir()
 }
 
-func NewFileSystem() *FileSystem {
-	return new(FileSystem)
+func (self *FileSystem) ReadGo(path string) (source, covered string, err error) {
+	original, err = ioutil.ReadFile(path)
+	if err != nil {
+		return "", "", err
+	}
+
+	if !self.coverage {
+		coverage = original
+		return
+	}
+
+	command := exec.Command(self.gobin, "tool", "cover", "-mode:set", "-var=GoConvey", path)
+	rawOutput, err = command.CombinedOutput()
+	covered = string(rawOutput)
+	if err != nil {
+		original = ""
+		covered = ""
+	}
+	return
+}
+
+func NewFileSystem(gobin string) *FileSystem {
+	self := new(FileSystem)
+	self.gobin = gobin
+	self.coverage = goVersion_1_2_orGreater()
+	return self
 }

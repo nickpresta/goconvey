@@ -8,7 +8,10 @@ import (
 )
 
 type FakeFileSystem struct {
-	steps []*FakeFileInfo
+	steps    []*FakeFileInfo
+	original map[string]string
+	covered  map[string]string
+	errors   map[string]error
 }
 
 func (self *FakeFileSystem) Create(path string, size int64, modified time.Time) {
@@ -65,9 +68,21 @@ func (self *FakeFileSystem) Exists(directory string) bool {
 	return false
 }
 
+func (self *FakeFileSystem) Populate(path, original, covered string, err error) {
+	self.original[path] = original
+	self.covered[path] = covered
+	self.errors[path] = err
+}
+func (self *FakeFileSystem) ReadGo(path string) (source, covered string, err error) {
+	return self.original[path], self.covered[path], self.errors[path]
+}
+
 func NewFakeFileSystem() *FakeFileSystem {
 	self := new(FakeFileSystem)
 	self.steps = []*FakeFileInfo{}
+	self.original = map[string]string{}
+	self.covered = map[string]string{}
+	self.errors = map[string]error{}
 	return self
 }
 

@@ -83,7 +83,7 @@ func wireup() (*contract.Monitor, contract.Server) {
 		panic(err)
 	}
 
-	fs := system.NewFileSystem()
+	fs := system.NewFileSystem(gobin)
 	shell := system.NewShell(gobin)
 
 	watcher := watch.NewWatcher(fs, shell)

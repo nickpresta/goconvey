@@ -1,6 +1,7 @@
 package system
 
 import (
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -171,6 +172,35 @@ func TestFakeFileSystem(t *testing.T) {
 
 				Convey("The operation should complete without error", func() {
 					So(err, ShouldBeNil)
+				})
+			})
+		})
+
+		Convey("When reading a go source code file", func() {
+			Convey("And the file is a valid go file", func() {
+				fs.Populate("/hi.go", "original", "covered", nil)
+				original, covered, err := fs.ReadGo("/hi.go")
+
+				Convey("The original and covered source should be returned", func() {
+					So(original, ShouldEqual, "original")
+					So(covered, ShouldEqual, "covered")
+				})
+
+				Convey("The error should be nil", func() {
+					So(err, ShouldBeNil)
+				})
+			})
+
+			Convey("And the file is a broken go file", func() {
+				fs.Populate("/hi.go", "", "", errors.New("Bad!"))
+				original, covered, err := fs.ReadGo("/hi.go")
+				Convey("The original and covered source should be empty", func() {
+					So(original, ShouldBeBlank)
+					So(covered, ShouldBeBlank)
+				})
+
+				Convey("The error should be populated", func() {
+					So(err, ShouldResemble, errors.New("Bad!"))
 				})
 			})
 		})

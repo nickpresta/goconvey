@@ -46,6 +46,7 @@ type (
 		Walk(root string, step filepath.WalkFunc)
 		Listing(directory string) ([]os.FileInfo, error)
 		Exists(directory string) bool
+		ReadGo(path string) (source, covered string, err error)
 	}
 
 	Shell interface {
