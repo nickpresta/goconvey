@@ -27,10 +27,10 @@ func TestCache(t *testing.T) {
 			})
 		})
 
-		Convey("When build failure output contains no references to known files", func() {
+		Convey("When output contains no references to known files", func() {
 			actual := cache.Rewrite("blah blah blah")
 
-			Convey("It should return the same stack trace", func() {
+			Convey("It should return the same output", func() {
 				So(actual, ShouldEqual, "blah blah blah")
 			})
 		})
@@ -44,13 +44,6 @@ func TestCache(t *testing.T) {
 				So(actual, ShouldEqual, expectedPanic)
 			})
 		})
-
-		Convey("When panic output contains no references to known files", func() {
-			SkipConvey("It should return the same stack trace", func() {
-
-			})
-		})
-
 	})
 }
 

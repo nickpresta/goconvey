@@ -28,10 +28,13 @@ type SourceCache struct {
 
 func (self *SourceCache) Update(path string, sum int64) {
 	relativePath := contract.ResolvePackageName(path)
+	if self.checksums[relativePath] == sum {
+		return
+	}
 	self.checksums[relativePath] = sum
 	original, coverage, err := self.fs.ReadGo(path)
 	if err != nil {
-		return // just bail
+		return
 	}
 
 	rewrite := make(map[int]int)
@@ -46,7 +49,6 @@ func (self *SourceCache) Update(path string, sum int64) {
 		rewrite[y] = x
 		y++
 	}
-	fmt.Println(self.files)
 }
 
 func (self *SourceCache) Rewrite(output string) string {
