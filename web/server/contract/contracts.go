@@ -42,6 +42,11 @@ type (
 		IsIgnored(folder string) bool
 	}
 
+	Cache interface {
+		Update(path string, sum int64)
+		Rewrite(output string) string
+	}
+
 	FileSystem interface {
 		Walk(root string, step filepath.WalkFunc)
 		Listing(directory string) ([]os.FileInfo, error)

@@ -54,7 +54,7 @@ func (self *FileSystem) ReadGo(path string) (source, covered string, err error) 
 		return
 	}
 
-	command := exec.Command(self.gobin, "tool", "cover", "-mode:set", "-var=GoConvey__coverage__", path)
+	command := exec.Command(self.gobin, "tool", "cover", "-mode=set", "-var=GoConvey__coverage__", path)
 	rawOutput, err := command.CombinedOutput()
 	covered = string(rawOutput)
 	if err != nil {

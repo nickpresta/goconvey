@@ -17,7 +17,7 @@ func TestParser(t *testing.T) {
 	)
 
 	Convey("Subject: Parser parses test output for active packages", t, func() {
-		parser = NewParser(fakeParserImplementation)
+		parser = NewParser(fakeParserImplementation, nil)
 
 		Convey("When given a collection of packages", func() {
 			parser.Parse(packages)

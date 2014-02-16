@@ -10,10 +10,13 @@
 // Rob Pike's summary:
 //     I think it's pretty easy, but comme ci comme ça.
 //
+// My apologies.
+//
 package watcher
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -31,9 +34,13 @@ func (self *SourceCache) Update(path string, sum int64) {
 	if self.checksums[relativePath] == sum {
 		return
 	}
+	log.Println("Caching source code for:", relativePath)
 	self.checksums[relativePath] = sum
+	log.Println("About to read:", path)
 	original, coverage, err := self.fs.ReadGo(path)
 	if err != nil {
+		log.Println(err.Error())
+		log.Println(original, coverage)
 		return
 	}
 
@@ -41,11 +48,20 @@ func (self *SourceCache) Update(path string, sum int64) {
 	self.files[relativePath] = rewrite
 	lines := strings.Split(original, "\n")
 	covered := strings.Split(coverage, "\n")
+	if strings.HasSuffix(relativePath, "/package_parser_go1.1_test.go") {
+		log.Println(original)
+		log.Println(coverage)
+	}
 	y := 0
-	for x, _ := range lines {
+	for x, line := range lines {
 		if strings.Contains(covered[y], "GoConvey__coverage__") {
 			y++
+		} else if strings.HasPrefix(line, "// +build") {
+			// go cover tool preserves build directive comments.
+		} else if strings.HasPrefix(strings.TrimSpace(line), "//") {
+			continue // go cover tool filters out all other comments.
 		}
+
 		rewrite[y] = x
 		y++
 	}

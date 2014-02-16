@@ -85,18 +85,19 @@ func wireup() (*contract.Monitor, contract.Server) {
 
 	fs := system.NewFileSystem(gobin)
 	shell := system.NewShell(gobin)
+	cache := watch.NewSourceCache(fs)
 
 	watcher := watch.NewWatcher(fs, shell)
 	watcher.Adjust(working)
 
-	parser := parse.NewParser(parse.ParsePackageResults)
+	parser := parse.NewParser(parse.ParsePackageResults, cache)
 	tester := exec.NewConcurrentTester(shell)
 	tester.SetBatchSize(packages)
 
 	statusNotif := make(chan bool, 1)
 	executor := exec.NewExecutor(tester, parser, statusNotif)
 	server := api.NewHTTPServer(watcher, executor, statusNotif)
-	scanner := watch.NewScanner(fs, watcher)
+	scanner := watch.NewScanner(fs, watcher, cache)
 	monitor := contract.NewMonitor(scanner, watcher, executor, server, sleeper)
 
 	return monitor, server

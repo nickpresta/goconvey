@@ -22,6 +22,12 @@ func TestScanner(t *testing.T) {
 			Convey("The scanner should report a change in state", func() {
 				So(changed, ShouldBeTrue)
 			})
+
+			Convey("The cache should be notified of each go file", func() {
+				So(len(fixture.cache.updates), ShouldEqual, 2)
+				So(fixture.cache.updates["/root/file.go"], ShouldBeGreaterThan, 1)
+				So(fixture.cache.updates["/root/sub/file.go"], ShouldBeGreaterThan, 1)
+			})
 		})
 
 		Convey("Then, on subsequent calls to Scan()", func() {
@@ -36,9 +42,14 @@ func TestScanner(t *testing.T) {
 
 			Convey("When a new go file is created within a watched folder", func() {
 				fixture.fs.Create("/root/new_stuff.go", 42, time.Now())
+				changed := fixture.scan()
+
+				Convey("The cache should receive the path and sum of the file", func() {
+					So(fixture.cache.updates["/root/new_stuff.go"], ShouldBeGreaterThan, 1)
+				})
 
 				Convey("The scanner should report a change in state", func() {
-					So(fixture.scan(), ShouldBeTrue)
+					So(changed, ShouldBeTrue)
 				})
 			})
 
@@ -52,17 +63,28 @@ func TestScanner(t *testing.T) {
 
 			Convey("When an existing go file within a watched folder has been modified", func() {
 				fixture.fs.Modify("/root/sub/file.go")
+				oldSum := fixture.cache.updates["/root/sub/file.go"]
+				changed := fixture.scan()
+
+				Convey("The cache should receive the path and sum of the file", func() {
+					So(fixture.cache.updates["/root/sub/file.go"], ShouldBeGreaterThan, oldSum)
+				})
 
 				Convey("The scanner should report a change in state", func() {
-					So(fixture.scan(), ShouldBeTrue)
+					So(changed, ShouldBeTrue)
 				})
 			})
 
 			Convey("When an existing go file within a watched folder has been renamed", func() {
 				fixture.fs.Rename("/root/sub/file.go", "/root/sub/asdf.go")
+				changed = fixture.scan()
 
 				Convey("The scanner should report a change in state", func() {
-					So(fixture.scan(), ShouldBeTrue)
+					So(changed, ShouldBeTrue)
+				})
+
+				Convey("The cache should be notified of each go file", func() {
+					So(fixture.cache.updates["/root/sub/asdf.go"], ShouldBeGreaterThan, 1)
 				})
 			})
 
@@ -236,6 +258,7 @@ type scannerFixture struct {
 	scanner *Scanner
 	fs      *system.FakeFileSystem
 	watcher *WatcherWrapper
+	cache   *FakeCache
 }
 
 func (self *scannerFixture) scan() bool {
@@ -263,7 +286,28 @@ func newScannerFixture() *scannerFixture {
 	self.fs.Create("/root/sub/empty", 0, time.Now())
 	self.watcher = newWatcherWrapper(NewWatcher(self.fs, system.NewFakeShell()))
 	self.watcher.Adjust("/root")
-	self.scanner = NewScanner(self.fs, self.watcher)
+	self.cache = newFakeCache()
+	self.scanner = NewScanner(self.fs, self.watcher, self.cache)
+	return self
+}
+
+/******** Fake Cache ********/
+
+type FakeCache struct {
+	updates map[string]int64
+}
+
+func (self *FakeCache) Update(path string, sum int64) {
+	self.updates[path] = sum
+}
+
+func (self *FakeCache) Rewrite(output string) string {
+	panic("Not supported")
+}
+
+func newFakeCache() *FakeCache {
+	self := new(FakeCache)
+	self.updates = make(map[string]int64)
 	return self
 }
 

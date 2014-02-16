@@ -8,6 +8,7 @@ import (
 
 type Parser struct {
 	parser func(*contract.PackageResult, string)
+	cache  contract.Cache
 }
 
 func (self *Parser) Parse(packages []*contract.Package) {
@@ -15,6 +16,9 @@ func (self *Parser) Parse(packages []*contract.Package) {
 		if p.Active {
 			self.parser(p.Result, p.Output)
 
+			if p.Result.Outcome == contract.BuildFailure {
+				p.Output = self.cache.Rewrite(p.Output)
+			}
 			// TODO: if contract.BuildFailure
 			//           rewrite build output
 
@@ -29,8 +33,9 @@ func (self *Parser) Parse(packages []*contract.Package) {
 	}
 }
 
-func NewParser(helper func(*contract.PackageResult, string)) *Parser {
+func NewParser(helper func(*contract.PackageResult, string), cache contract.Cache) *Parser {
 	self := new(Parser)
 	self.parser = helper
+	self.cache = cache
 	return self
 }
